@@ -48,11 +48,13 @@ const WorkImage = (props: Props) => {
                 src={img}
                 alt={`${props.alt} ${index + 1}`}
                 className="work-pair-image"
+                loading="lazy"
+                decoding="async"
               />
             ))}
           </div>
         ) : (
-          <img src={props.image} alt={props.alt} />
+          <img src={props.image} alt={props.alt} loading="lazy" decoding="async" />
         )}
         {isVideo && <video src={video} autoPlay muted playsInline loop></video>}
       </a>

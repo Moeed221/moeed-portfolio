@@ -2,7 +2,7 @@ import {
   createContext,
   PropsWithChildren,
   useContext,
-  useEffect,
+  useMemo,
   useState,
 } from "react";
 import Loading from "../components/Loading";
@@ -19,12 +19,8 @@ export const LoadingProvider = ({ children }: PropsWithChildren) => {
   const [isLoading, setIsLoading] = useState(true);
   const [loading, setLoading] = useState(0);
 
-  const value = {
-    isLoading,
-    setIsLoading,
-    setLoading,
-  };
-  useEffect(() => {}, [loading]);
+  // Progress belongs to the loader; do not rerender the whole portfolio per tick.
+  const value = useMemo(() => ({ isLoading, setIsLoading, setLoading }), [isLoading]);
 
   return (
     <LoadingContext.Provider value={value as LoadingType}>

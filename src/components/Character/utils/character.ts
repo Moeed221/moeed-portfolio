@@ -1,7 +1,7 @@
 import * as THREE from "three";
-import { DRACOLoader, GLTF, GLTFLoader } from "three-stdlib";
-import { setCharTimeline, setAllTimeline } from "../../utils/GsapScroll";
+import { DRACOLoader, GLTFLoader } from "three-stdlib";
 import { decryptFile } from "./decrypt";
+import { disposeObject } from "./disposeObject";
 
 const setCharacter = (
   renderer: THREE.WebGLRenderer,
@@ -13,66 +13,40 @@ const setCharacter = (
   dracoLoader.setDecoderPath("/draco/");
   loader.setDRACOLoader(dracoLoader);
 
-  const loadCharacter = () => {
-    return new Promise<GLTF | null>(async (resolve, reject) => {
+  const loadCharacter = async (signal?: AbortSignal) => {
+    try {
+      const decrypted = await decryptFile("/models/character.enc?v=2", "MyCharacter12", signal);
+      signal?.throwIfAborted();
+      // Parse the buffer directly instead of creating a retained Blob URL.
+      const gltf = await loader.parseAsync(decrypted, "");
+      const character = gltf.scene;
       try {
-        const encryptedBlob = await decryptFile(
-          "/models/character.enc?v=2",
-          "MyCharacter12"
-        );
-        const blobUrl = URL.createObjectURL(new Blob([encryptedBlob]));
-
-        let character: THREE.Object3D;
-        loader.load(
-          blobUrl,
-          async (gltf) => {
-            character = gltf.scene;
-            await renderer.compileAsync(character, camera, scene);
-            character.traverse((child: any) => {
-              if (child.isMesh) {
-                const mesh = child as THREE.Mesh;
-
-                // Change clothing colors to match site theme
-                if (mesh.material) {
-                  if (mesh.name === "BODY.SHIRT") { // The shirt mesh
-                    const newMat = (mesh.material as THREE.Material).clone() as THREE.MeshStandardMaterial;
-                    newMat.color = new THREE.Color("#8B4513");
-                    mesh.material = newMat;
-                  } else if (mesh.name === "Pant") {
-                    const newMat = (mesh.material as THREE.Material).clone() as THREE.MeshStandardMaterial;
-                    newMat.color = new THREE.Color("#000000");
-                    mesh.material = newMat;
-                  }
-                }
-
-                child.castShadow = true;
-                child.receiveShadow = true;
-                mesh.frustumCulled = true;
-              }
-            });
-            resolve(gltf);
-            setCharTimeline(character, camera);
-            setAllTimeline();
-            character!.getObjectByName("footR")!.position.y = 3.36;
-            character!.getObjectByName("footL")!.position.y = 3.36;
-
-            // Monitor scale is handled by GsapScroll.ts animations
-
-            dracoLoader.dispose();
-          },
-          undefined,
-          (error) => {
-            console.error("Error loading GLTF model:", error);
-            reject(error);
+        signal?.throwIfAborted();
+        character.traverse((child) => {
+          if (!(child instanceof THREE.Mesh)) return;
+          // Preserve the original materials and clothing colors.
+          if (child.name === "BODY.SHIRT" || child.name === "Pant") {
+            const material = (child.material as THREE.MeshStandardMaterial).clone();
+            material.color.set(child.name === "BODY.SHIRT" ? "#8B4513" : "#000000");
+            child.material = material;
           }
-        );
-      } catch (err) {
-        reject(err);
-        console.error(err);
+          child.castShadow = true;
+          child.receiveShadow = true;
+          child.frustumCulled = true;
+        });
+        await renderer.compileAsync(character, camera, scene);
+        signal?.throwIfAborted();
+        character.getObjectByName("footR")!.position.y = 3.36;
+        character.getObjectByName("footL")!.position.y = 3.36;
+        return gltf;
+      } catch (error) {
+        disposeObject(character);
+        throw error;
       }
-    });
+    } finally {
+      dracoLoader.dispose();
+    }
   };
-
   return { loadCharacter };
 };
 

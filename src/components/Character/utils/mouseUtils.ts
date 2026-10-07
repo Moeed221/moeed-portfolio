@@ -26,12 +26,17 @@ export const handleTouchEnd = (
     interpolationY: number
   ) => void
 ) => {
-  setTimeout(() => {
+  let restoreTimer: ReturnType<typeof setTimeout>;
+  const resetTimer = setTimeout(() => {
     setMousePosition(0, 0, 0.03, 0.03);
-    setTimeout(() => {
+    restoreTimer = setTimeout(() => {
       setMousePosition(0, 0, 0.1, 0.2);
     }, 1000);
   }, 2000);
+  return () => {
+    clearTimeout(resetTimer);
+    clearTimeout(restoreTimer);
+  };
 };
 
 export const handleHeadRotation = (
@@ -50,8 +55,8 @@ export const handleHeadRotation = (
       mouseX * maxRotation,
       interpolationY
     );
-    let minRotationX = -0.3;
-    let maxRotationX = 0.4;
+    const minRotationX = -0.3;
+    const maxRotationX = 0.4;
     if (mouseY > minRotationX) {
       if (mouseY < maxRotationX) {
         headBone.rotation.x = lerp(

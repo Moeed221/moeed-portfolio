@@ -32,27 +32,28 @@ const Navbar = () => {
       console.error("ScrollSmoother failed to initialize:", error);
     }
 
-    let links = document.querySelectorAll(".header ul a");
-    links.forEach((elem) => {
-      let element = elem as HTMLAnchorElement;
-      element.addEventListener("click", (e) => {
-        if (window.innerWidth > 1024) {
-          e.preventDefault();
-          let elem = e.currentTarget as HTMLAnchorElement;
-          let section = elem.getAttribute("data-href");
-          if (smoother) {
-            smoother.scrollTo(section, true, "top top");
-          } else if (section) {
-            document
-              .querySelector(section)
-              ?.scrollIntoView({ behavior: "smooth" });
-          }
-        }
-      });
-    });
-    window.addEventListener("resize", () => {
-      smoother?.refresh();
-    });
+    const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(".header ul a"));
+    const onLinkClick = (event: Event) => {
+      if (window.innerWidth <= 1024) return;
+      event.preventDefault();
+      const section = (event.currentTarget as HTMLAnchorElement).getAttribute("data-href");
+      if (smoother) smoother.scrollTo(section, true, "top top");
+      else if (section) document.querySelector(section)?.scrollIntoView({ behavior: "smooth" });
+    };
+    let resizeTimer: ReturnType<typeof setTimeout>;
+    const onResize = () => {
+      clearTimeout(resizeTimer);
+      resizeTimer = setTimeout(() => smoother?.refresh(), 200);
+    };
+    links.forEach((link) => link.addEventListener("click", onLinkClick));
+    window.addEventListener("resize", onResize);
+    return () => {
+      links.forEach((link) => link.removeEventListener("click", onLinkClick));
+      window.removeEventListener("resize", onResize);
+      clearTimeout(resizeTimer);
+      smoother?.kill();
+      smoother = undefined;
+    };
   }, []);
 
   useEffect(() => {

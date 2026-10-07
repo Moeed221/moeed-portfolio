@@ -76,5 +76,14 @@ export default function setSplitText() {
     );
   });
 
-  ScrollTrigger.addEventListener("refresh", () => setSplitText());
+}
+
+export function clearSplitText() {
+  document.querySelectorAll<ParaElement>(".para, .title").forEach((element) => {
+    element.anim?.scrollTrigger?.kill();
+    element.anim?.kill();
+    element.split?.revert();
+    delete element.anim;
+    delete element.split;
+  });
 }

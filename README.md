@@ -1,16 +1,42 @@
-# My Portfolio Wesbite - Overview 🚀
+# Moeed Naik Portfolio
 
-This repository contains the open source version of my porfolio website.
-Do check it out!
+React, TypeScript, GSAP, Three.js and WebGL portfolio. This fork contains a performance pass on the [original project](https://github.com/muhammadmudasirawan/moeed-portfolio).
 
-## Instructions 🛠️
+## Run locally
 
-I have modified the gsap club plugins with the trial plugins, but with the trial plugin you cannot host it🔴. So for Club plugins, Check out here: https://gsap.com/docs/v3/Installation/
+Use Node.js 22 or later.
 
-**Techstack** - React, TypeScript, GSAP, ThreeJS, WebGL, HTML, Css, JavaScript
+```sh
+npm ci
+npm run dev
+```
 
-![Portfolio-Preview](public/images/preview.png)
+For production:
+
+```sh
+npm run build
+npm run preview
+```
+
+The prebuild and predev scripts generate lossless WebP project screenshots from the committed PNG originals. Generated WebP files, build output and installed dependencies are ignored by Git. `npm ci` restores the locked dependencies on the current platform.
+
+## Performance changes
+
+- Load the design toolkit's physics and postprocessing code near its section.
+- Suspend offscreen WebGL canvases and toolkit physics; resume them when visible.
+- Stop WebGL work while the browser tab is hidden.
+- Reuse cursor tweens and physics vectors; stop idle cursor/icon updates.
+- Clean up animation loops, event listeners, timers and GPU resources.
+- Remove the accumulating text-refresh listeners and debounce resize work.
+- Lazy-load project screenshots, with lossless image conversion at build time.
+- Cache Vite's versioned assets with Netlify immutable cache headers.
+
+Original CSS, HTML, project content, materials, lighting, native pixel ratio and antialiasing are retained. See [PERFORMANCE.md](PERFORMANCE.md) for verification results.
+
+## Netlify
+
+Import this repository, choose `main`, use `npm run build` and publish `dist`. The settings and hashed-asset cache headers are included in `netlify.toml`. To update an existing Netlify site, connect that site's repository setting to this fork and trigger a new deployment.
 
 ## License
 
-This project is open source and available under the [MIT License](LICENSE).
+[MIT](LICENSE). The original license and source history are preserved.
