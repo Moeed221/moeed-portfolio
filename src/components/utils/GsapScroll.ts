@@ -34,6 +34,7 @@ export function setCharTimeline(
   });
   type ScreenMesh = THREE.Mesh<THREE.BufferGeometry, THREE.MeshStandardMaterial>;
   let screenLight: ScreenMesh | undefined, monitor: ScreenMesh | undefined;
+  let flicker: gsap.core.Timeline | undefined;
   character?.children.forEach((object) => {
     if (object.name === "Plane004") {
       object.children.forEach((node) => {
@@ -51,7 +52,7 @@ export function setCharTimeline(
       mesh.material.transparent = true;
       mesh.material.opacity = 0;
       mesh.material.emissive.set("#B0F5EA");
-      gsap.timeline({ repeat: -1, repeatRefresh: true }).to(mesh.material, {
+      flicker = gsap.timeline({ repeat: -1, repeatRefresh: true }).to(mesh.material, {
         emissiveIntensity: () => Math.random() * 8,
         duration: () => Math.random() * 0.6,
         delay: () => Math.random() * 0.1,
@@ -59,7 +60,7 @@ export function setCharTimeline(
       screenLight = mesh;
     }
   });
-  if (!monitor || !screenLight) return;
+  if (!monitor || !screenLight) return flicker;
   const neckBone = character?.getObjectByName("spine005");
   if (window.innerWidth > 1024) {
     if (character) {
@@ -130,6 +131,7 @@ export function setCharTimeline(
       tM2.to(".what-box-in", { display: "flex", duration: 0.1, delay: 0 }, 0);
     }
   }
+  return flicker;
 }
 
 export function setAllTimeline() {

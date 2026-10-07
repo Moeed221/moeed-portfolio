@@ -1,5 +1,7 @@
 # Performance verification
 
+The measurements below describe the first optimization pass. The subsequent mobile pass is documented at the end of this file.
+
 Verified against upstream commit `e3df33afa816d4b8bc3e2866d9bc2d8ebc969ea7`.
 
 ## Measured resource reductions
@@ -43,3 +45,20 @@ Installed dependencies and generated build files were removed from Git tracking.
 ## Deployment status
 
 The optimized source is committed to this fork. Updating the existing `moeed-khalid.netlify.app` site requires connecting it to this repository and deploying the new build. The GitHub fork does not automatically replace the existing upstream deployment.
+
+## Mobile rendering pass (2026-10-07)
+
+Reported issue: remaining lag on Android devices including Redmi 13.
+
+- Touch layouts up to 1024 CSS pixels use native document scrolling instead of ScrollSmoother's full-page transform. Desktop smoothing remains enabled.
+- The character's 3D drawing buffer starts at a maximum pixel ratio of 1.5. Sustained average frame intervals above 24 ms lower it by 0.25, to a floor of 1. Desktop retains native density, and phones below density 1 are not upscaled. Model geometry, materials, lighting, antialiasing, CSS dimensions, text and project image pixels are unchanged.
+- At an example native density of 2.75, a 1.5-density buffer processes approximately 70% fewer pixels. This is a buffer-area calculation, not an FPS measurement.
+- Height-only mobile resize events do not reallocate the 3D canvas or trigger a full scroll refresh. Width/orientation changes retain the current render budget.
+- Hero text loops and screen-light flicker pause offscreen or in hidden tabs and resume when visible.
+- Animated background glows receive compositor hints; no color, size or motion changes are introduced.
+
+Validation: production TypeScript/Vite build, ESLint (zero errors; four existing Fast Refresh warnings), whitespace checks, and three render-budget tests covering slow frames, startup/tab restoration, desktop and low-density screens. Run the tests with `node --test tests/renderBudget.test.mjs`.
+
+No physical Redmi 13 FPS measurements are available. The mobile 3D image may be less sharp than native density; layout, content and animations are preserved.
+
+Render deployment: https://moeed-portfolio-optimized.onrender.com, automatic deployments from the fork's `main` branch, `npm ci && npm run build`, publish directory `dist`, Node 22, immutable caching for hashed `/assets/*` files.

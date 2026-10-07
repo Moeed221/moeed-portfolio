@@ -15,8 +15,11 @@ const Navbar = () => {
   const profileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    try {
-      smoother = ScrollSmoother.create({
+    const media = gsap.matchMedia();
+    media.add("(min-width: 1025px), (pointer: fine)", () => {
+      // Touch phones already use native motion; avoid transforming the whole
+      // page through ScrollSmoother's main-thread scroll handler on those devices.
+      const instance = ScrollSmoother.create({
         wrapper: "#smooth-wrapper",
         content: "#smooth-content",
         smooth: 1.7,
@@ -26,11 +29,16 @@ const Navbar = () => {
         ignoreMobileResize: true,
       });
 
-      smoother.scrollTop(0);
-      smoother.paused(true);
-    } catch (error) {
-      console.error("ScrollSmoother failed to initialize:", error);
-    }
+      smoother = instance;
+      if (!document.querySelector(".main-active")) {
+        instance.scrollTop(0);
+        instance.paused(true);
+      }
+      return () => {
+        instance.kill();
+        if (smoother === instance) smoother = undefined;
+      };
+    });
 
     const links = Array.from(document.querySelectorAll<HTMLAnchorElement>(".header ul a"));
     const onLinkClick = (event: Event) => {
@@ -41,7 +49,10 @@ const Navbar = () => {
       else if (section) document.querySelector(section)?.scrollIntoView({ behavior: "smooth" });
     };
     let resizeTimer: ReturnType<typeof setTimeout>;
+    let width = window.innerWidth;
     const onResize = () => {
+      if (window.innerWidth === width) return;
+      width = window.innerWidth;
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(() => smoother?.refresh(), 200);
     };
@@ -51,8 +62,7 @@ const Navbar = () => {
       links.forEach((link) => link.removeEventListener("click", onLinkClick));
       window.removeEventListener("resize", onResize);
       clearTimeout(resizeTimer);
-      smoother?.kill();
-      smoother = undefined;
+      media.revert();
     };
   }, []);
 

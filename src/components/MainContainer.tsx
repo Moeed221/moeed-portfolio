@@ -10,6 +10,7 @@ import WhatIDo from "./WhatIDo";
 import Work from "./Work";
 import setSplitText, { clearSplitText } from "./utils/splitText";
 import DeferredTechStack from "./DeferredTechStack";
+import { clearInitialFX } from "./utils/initialFX";
 
 const MainContainer = ({ children }: PropsWithChildren) => {
   const [isDesktopView, setIsDesktopView] = useState<boolean>(
@@ -35,6 +36,7 @@ const MainContainer = ({ children }: PropsWithChildren) => {
       window.removeEventListener("resize", resizeHandler);
       clearTimeout(resizeTimer);
       clearSplitText();
+      clearInitialFX();
     };
   }, []);
 

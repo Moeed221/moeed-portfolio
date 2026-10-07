@@ -15,6 +15,7 @@ import setAnimations from "./utils/animationUtils";
 import { disposeObject } from "./utils/disposeObject";
 import { setCharTimeline, setAllTimeline } from "../utils/GsapScroll";
 import { setProgress } from "../Loading";
+import { isMobileRender, RenderBudget } from "./utils/renderBudget";
 
 const Scene = () => {
   const canvasDiv = useRef<HTMLDivElement>(null);
@@ -26,10 +27,10 @@ const Scene = () => {
     if (!container) return;
     const rect = container.getBoundingClientRect();
     const scene = new THREE.Scene();
-    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true });
-    // Keep the same native resolution, lighting and antialiasing.
+    const budget = new RenderBudget(isMobileRender(), window.devicePixelRatio);
+    const renderer = new THREE.WebGLRenderer({ alpha: true, antialias: true, powerPreference: "high-performance" });
+    renderer.setPixelRatio(budget.pixelRatio);
     renderer.setSize(rect.width, rect.height);
-    renderer.setPixelRatio(window.devicePixelRatio);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1;
     container.appendChild(renderer.domElement);
@@ -55,12 +56,18 @@ const Scene = () => {
     let touching = false;
     let isInViewport = true;
     let rendering = false;
+    let resizeWidth = window.innerWidth;
+    let flicker: gsap.core.Timeline | undefined;
     const mouse = { x: 0, y: 0 };
     const interpolation = { x: 0.1, y: 0.2 };
     const setMouse = (x: number, y: number) => { mouse.x = x; mouse.y = y; };
 
     const animate = () => {
-      const delta = Math.min(clock.getDelta(), 0.1);
+      const elapsed = clock.getDelta();
+      const delta = Math.min(elapsed, 0.1);
+      if (character && budget.sample(elapsed * 1000)) {
+        renderer.setPixelRatio(budget.pixelRatio);
+      }
       if (headBone) {
         handleHeadRotation(headBone, mouse.x, mouse.y, interpolation.x, interpolation.y, THREE.MathUtils.lerp);
         if (screenLight) light.setPointLight(screenLight);
@@ -73,7 +80,9 @@ const Scene = () => {
       const shouldRender = isInViewport && !document.hidden;
       if (shouldRender === rendering) return;
       rendering = shouldRender;
+      flicker?.paused(!shouldRender);
       clock.getDelta(); // Do not fast-forward animations after an inactive tab.
+      budget.resetSample();
       renderer.setAnimationLoop(shouldRender ? animate : null);
     };
     const observer = new IntersectionObserver(([entry]) => {
@@ -93,7 +102,8 @@ const Scene = () => {
       headBone = character.getObjectByName("spine006");
       screenLight = character.getObjectByName("screenlight") as typeof screenLight;
       context.add(() => {
-        setCharTimeline(character!, camera);
+        flicker = setCharTimeline(character!, camera);
+        flicker?.paused(!rendering);
         setAllTimeline();
       });
       progress.loaded().then(() => {
@@ -110,8 +120,12 @@ const Scene = () => {
     });
 
     const onResize = () => {
+      // Android's address bar changes height while scrolling. It should not
+      // reallocate the canvas or refresh every scroll trigger on each change.
+      if (budget.mobile && window.innerWidth === resizeWidth) return;
+      resizeWidth = window.innerWidth;
       clearTimeout(resizeTimer);
-      resizeTimer = setTimeout(() => handleResize(renderer, camera, canvasDiv), 180);
+      resizeTimer = setTimeout(() => handleResize(renderer, camera, canvasDiv, budget.pixelRatio), 180);
     };
     const onMouseMove = (event: MouseEvent) => handleMouseMove(event, setMouse);
     const onTouchStart = () => {

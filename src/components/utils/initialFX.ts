@@ -2,7 +2,15 @@ import { SplitText } from "gsap/SplitText";
 import gsap from "gsap";
 import { smoother } from "../Navbar";
 
+let removeLoopObservers: (() => void) | undefined;
+
+export function clearInitialFX() {
+  removeLoopObservers?.();
+  removeLoopObservers = undefined;
+}
+
 export function initialFX() {
+  clearInitialFX();
   document.body.style.overflowY = "auto";
   smoother?.paused(false);
   document.getElementsByTagName("main")[0].classList.add("main-active");
@@ -19,7 +27,7 @@ export function initialFX() {
       linesClass: "split-line",
     }
   );
-  gsap.fromTo(
+  const titleReveal = gsap.fromTo(
     landingText.chars,
     { opacity: 0, y: 80, filter: "blur(5px)" },
     {
@@ -36,7 +44,7 @@ export function initialFX() {
   const TextProps = { type: "chars,lines", linesClass: "split-h2" };
 
   const landingText2 = new SplitText(".landing-h2-info", TextProps);
-  gsap.fromTo(
+  const infoReveal = gsap.fromTo(
     landingText2.chars,
     { opacity: 0, y: 80, filter: "blur(5px)" },
     {
@@ -50,7 +58,7 @@ export function initialFX() {
     }
   );
 
-  gsap.fromTo(
+  const headingReveal = gsap.fromTo(
     ".landing-info-h2",
     { opacity: 0, y: 30 },
     {
@@ -76,8 +84,22 @@ export function initialFX() {
   const landingText4 = new SplitText(".landing-h2-1", TextProps);
   const landingText5 = new SplitText(".landing-h2-2", TextProps);
 
-  LoopText(landingText2, landingText3);
-  LoopText(landingText4, landingText5);
+  const loops = [titleReveal, infoReveal, headingReveal, LoopText(landingText2, landingText3), LoopText(landingText4, landingText5)];
+  let visible = true;
+  const updateLoops = () => loops.forEach((loop) => loop.paused(!visible || document.hidden));
+  const observer = new IntersectionObserver(([entry]) => {
+    visible = entry.isIntersecting;
+    updateLoops();
+  });
+  const landing = document.getElementById("landingDiv");
+  if (landing) observer.observe(landing);
+  document.addEventListener("visibilitychange", updateLoops);
+  updateLoops();
+  removeLoopObservers = () => {
+    observer.disconnect();
+    document.removeEventListener("visibilitychange", updateLoops);
+    loops.forEach((loop) => loop.kill());
+  };
 }
 
 function LoopText(Text1: SplitText, Text2: SplitText) {
@@ -133,4 +155,5 @@ function LoopText(Text1: SplitText, Text2: SplitText) {
       },
       1
     );
+  return tl;
 }

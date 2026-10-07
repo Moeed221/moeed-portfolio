@@ -31,7 +31,9 @@ The prebuild and predev scripts generate lossless WebP project screenshots from 
 - Lazy-load project screenshots, with lossless image conversion at build time.
 - Cache Vite's versioned assets with Netlify immutable cache headers.
 
-Original CSS, HTML, project content, materials, lighting, native pixel ratio and antialiasing are retained. See [PERFORMANCE.md](PERFORMANCE.md) for verification results.
+The original layout, HTML, project content, materials, lighting and antialiasing are retained. Desktop keeps its native pixel ratio. Touch phones use a 3D pixel ratio capped at 1.5, which can fall to 1 under sustained slow frames; text and project images keep their original resolution. Native mobile scrolling avoids transforming the full page, and the hero's text and lighting loops pause when offscreen. Two animated glow elements receive compositor hints without changing their appearance. See [PERFORMANCE.md](PERFORMANCE.md) for verification results.
+
+The optimized portfolio is hosted at https://moeed-portfolio-optimized.onrender.com with automatic deployments from `main`.
 
 ## Netlify
 
