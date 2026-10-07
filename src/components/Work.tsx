@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useLayoutEffect, useRef } from "react";
 import "./styles/Work.css";
 import WorkImage from "./WorkImage";
 import { MdArrowBack, MdArrowForward } from "react-icons/md";
@@ -107,6 +107,22 @@ const projects: Project[] = [
 const Work = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
+  const trackContainerRef = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    const container = trackContainerRef.current;
+    const slide = container?.querySelectorAll<HTMLElement>(".carousel-slide")[currentIndex];
+    if (!container || !slide) return;
+
+    // On narrow screens, follow the visible project instead of the tallest slide.
+    const updateHeight = () => {
+      container.style.setProperty("--carousel-height", `${slide.getBoundingClientRect().height}px`);
+    };
+    updateHeight();
+    const observer = new ResizeObserver(updateHeight);
+    observer.observe(slide);
+    return () => observer.disconnect();
+  }, [currentIndex]);
 
   const goToSlide = useCallback(
     (index: number) => {
@@ -138,26 +154,8 @@ const Work = () => {
         </h2>
 
         <div className="carousel-wrapper">
-          {/* Navigation Arrows */}
-          <button
-            className="carousel-arrow carousel-arrow-left"
-            onClick={goToPrev}
-            aria-label="Previous project"
-            data-cursor="disable"
-          >
-            <MdArrowBack />
-          </button>
-          <button
-            className="carousel-arrow carousel-arrow-right"
-            onClick={goToNext}
-            aria-label="Next project"
-            data-cursor="disable"
-          >
-            <MdArrowForward />
-          </button>
-
           {/* Slides */}
-          <div className="carousel-track-container">
+          <div className="carousel-track-container" ref={trackContainerRef}>
             <div
               className="carousel-track"
               style={{
@@ -197,18 +195,38 @@ const Work = () => {
             </div>
           </div>
 
-          {/* Dot Indicators */}
-          <div className="carousel-dots">
-            {projects.map((_, index) => (
+          <div className="carousel-controls">
+            <div className="carousel-arrows">
               <button
-                key={index}
-                className={`carousel-dot ${index === currentIndex ? "carousel-dot-active" : ""
-                  }`}
-                onClick={() => goToSlide(index)}
-                aria-label={`Go to project ${index + 1}`}
+                className="carousel-arrow carousel-arrow-left"
+                onClick={goToPrev}
+                aria-label="Previous project"
                 data-cursor="disable"
-              />
-            ))}
+              >
+                <MdArrowBack />
+              </button>
+              <button
+                className="carousel-arrow carousel-arrow-right"
+                onClick={goToNext}
+                aria-label="Next project"
+                data-cursor="disable"
+              >
+                <MdArrowForward />
+              </button>
+            </div>
+            {/* Dot Indicators */}
+            <div className="carousel-dots">
+              {projects.map((_, index) => (
+                <button
+                  key={index}
+                  className={`carousel-dot ${index === currentIndex ? "carousel-dot-active" : ""
+                    }`}
+                  onClick={() => goToSlide(index)}
+                  aria-label={`Go to project ${index + 1}`}
+                  data-cursor="disable"
+                />
+              ))}
+            </div>
           </div>
         </div>
       </div>

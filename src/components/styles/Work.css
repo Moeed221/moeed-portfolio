@@ -122,6 +122,11 @@
 }
 
 /* ── Navigation Arrows ── */
+.carousel-controls,
+.carousel-arrows {
+  display: contents;
+}
+
 .carousel-arrow {
   position: absolute;
   top: 50%;
@@ -377,6 +382,14 @@
 }
 
 @media only screen and (max-width: 1025px) {
+  .carousel-track {
+    align-items: flex-start;
+  }
+
+  .carousel-track-container {
+    height: var(--carousel-height, auto);
+  }
+
   .carousel-content {
     grid-template-columns: 1fr;
     gap: 30px;
@@ -470,11 +483,10 @@
   }
 
   .carousel-slide {
-    padding: 20px 0 70px;
+    padding: 20px 0 16px;
   }
 
   .carousel-content {
-    flex-direction: column;
     gap: 16px;
   }
 
@@ -557,20 +569,25 @@
     width: 36px;
     height: 36px;
     font-size: 16px;
-    top: auto;
-    bottom: 14px;
+    position: static;
     transform: none;
   }
 
-  .carousel-arrow-left {
-    left: calc(50% - 48px);
+  .carousel-controls {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
   }
 
-  .carousel-arrow-right {
-    right: calc(50% - 48px);
+  .carousel-arrows {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
   }
 
   .carousel-dots {
-    margin-top: 16px;
+    margin-top: 0;
   }
 }
